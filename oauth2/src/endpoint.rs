@@ -71,7 +71,7 @@ where
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn endpoint_request<'a>(
     auth_type: &'a AuthType,
-    client_id: Option<&'a ClientId>,
+    client_id: &'a ClientId,
     client_secret: Option<&'a ClientSecret>,
     extra_params: &'a [(Cow<'a, str>, Cow<'a, str>)],
     redirect_url: Option<Cow<'a, RedirectUrl>>,
@@ -108,10 +108,10 @@ pub(crate) fn endpoint_request<'a>(
     }
 
     // FIXME: add support for auth extensions? e.g., client_secret_jwt and private_key_jwt
-    match (auth_type, client_id, client_secret) {
+    match (auth_type, client_secret) {
         // Basic auth only makes sense when a client secret is provided. Otherwise, always pass the
         // client ID in the request body.
-        (AuthType::BasicAuth, Some(client_id), Some(secret)) => {
+        (AuthType::BasicAuth, Some(secret)) => {
             // Section 2.3.1 of RFC 6749 requires separately url-encoding the id and secret
             // before using them as HTTP Basic auth username and password. Note that this is
             // not standard for ordinary Basic auth, so curl won't do it for us.
@@ -126,10 +126,8 @@ pub(crate) fn endpoint_request<'a>(
                 HeaderValue::from_str(&format!("Basic {}", &b64_credential)).unwrap(),
             );
         }
-        (AuthType::RequestBody, _, _) | (AuthType::BasicAuth, _, _) => {
-            if let Some(client_id) = client_id {
-                params.push(("client_id", client_id.as_ref()));
-            }
+        (AuthType::RequestBody, _) | (AuthType::BasicAuth, None) => {
+            params.push(("client_id", client_id));
             if let Some(client_secret) = client_secret {
                 params.push(("client_secret", client_secret.secret()));
             }
