@@ -626,6 +626,11 @@ impl<EF> DynamicClientRegistrationResponse<EF>
 where
     EF: ExtraDynamicClientRegistrationFields,
 {
+    /// Converts this registration response into an OAuth 2.0 client with the registered
+    /// `client_id` and `client_secret`.
+    ///
+    /// Authorization, token, and other endpoint URLs are not set and must be configured
+    /// separately before the client can be used for authorization flows.
     pub fn into_client<TE, TR, TIR, RT, TRE>(
         self,
     ) -> Client<

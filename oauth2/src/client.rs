@@ -209,7 +209,7 @@ where
         client_name: ClientName,
         dynamic_client_registration_url: &'a DynamicClientRegistrationUrl,
     ) -> DynamicClientRegistrationRequest<'a, TE> {
-        dynamic_client_registration_impl(client_name, &dynamic_client_registration_url)
+        dynamic_client_registration_impl(client_name, dynamic_client_registration_url)
     }
 }
 impl<

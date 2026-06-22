@@ -24,7 +24,8 @@
 //! cargo run --example dynamic_client_registration
 //! ```
 
-use oauth2::{reqwest, Client};
+use oauth2::basic::BasicClient;
+use oauth2::reqwest;
 use oauth2::{
     AccessToken, ClientName, DynamicClientRegistrationUrl, RedirectUrl, ResponseType, Scope,
     StandardDynamicClientRegistrationResponse,
@@ -49,7 +50,7 @@ fn main() {
         .build()
         .expect("Client should build");
 
-    let mut request = Client::dynamic_register(client_name, &registration_url)
+    let mut request = BasicClient::dynamic_register(client_name, &registration_url)
         .add_grant_type("authorization_code")
         .add_response_type(ResponseType::new("code".to_string()))
         .set_token_endpoint_auth_method("client_secret_basic");
@@ -104,4 +105,6 @@ fn main() {
             println!("Client secret expires at (Unix time): {expires_at}");
         }
     }
+
+    let client = registration_response.into_client();
 }
