@@ -1,12 +1,13 @@
 use crate::{
-    types::{ClientName, DynamicClientRegistrationUrl},
-    AccessToken, AuthType, AuthUrl, AuthorizationCode, AuthorizationRequest,
-    ClientCredentialsTokenRequest, ClientId, ClientSecret, CodeTokenRequest, ConfigurationError,
-    CsrfToken, DeviceAccessTokenRequest, DeviceAuthorizationRequest, DeviceAuthorizationResponse,
-    DeviceAuthorizationUrl, ErrorResponse, ExtraDeviceAuthorizationFields, IntrospectionRequest,
-    IntrospectionUrl, PasswordTokenRequest, RedirectUrl, RefreshToken, RefreshTokenRequest,
-    ResourceOwnerPassword, ResourceOwnerUsername, RevocableToken, RevocationRequest, RevocationUrl,
-    TokenIntrospectionResponse, TokenResponse, TokenUrl,
+    dcr::dynamic_client_registration_impl, AccessToken, AuthType, AuthUrl, AuthorizationCode,
+    AuthorizationRequest, ClientCredentialsTokenRequest, ClientId, ClientName, ClientSecret,
+    CodeTokenRequest, ConfigurationError, CsrfToken, DeviceAccessTokenRequest,
+    DeviceAuthorizationRequest, DeviceAuthorizationResponse, DeviceAuthorizationUrl,
+    DynamicClientRegistrationRequest, DynamicClientRegistrationUrl, ErrorResponse,
+    ExtraDeviceAuthorizationFields, IntrospectionRequest, IntrospectionUrl, PasswordTokenRequest,
+    RedirectUrl, RefreshToken, RefreshTokenRequest, ResourceOwnerPassword, ResourceOwnerUsername,
+    RevocableToken, RevocationRequest, RevocationUrl, TokenIntrospectionResponse, TokenResponse,
+    TokenUrl,
 };
 
 use std::marker::PhantomData;
@@ -203,11 +204,12 @@ where
         }
     }
 
-    pub async fn dynamic_register(
+    /// Create a request to dynamically register an OAuth 2.0 client.
+    pub fn dynamic_register<'a>(
         client_name: ClientName,
-        dynamic_client_registration_url: DynamicClientRegistrationUrl,
-    ) -> () {
-        todo!()
+        dynamic_client_registration_url: &'a DynamicClientRegistrationUrl,
+    ) -> DynamicClientRegistrationRequest<'a, TE> {
+        dynamic_client_registration_impl(client_name, &dynamic_client_registration_url)
     }
 }
 impl<

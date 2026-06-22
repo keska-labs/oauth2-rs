@@ -1,15 +1,15 @@
 use crate::basic::BasicErrorResponseType;
-use crate::endpoint::{endpoint_response, HttpRequest};
+use crate::endpoint::{endpoint_response_with_status, HttpRequest};
 use crate::types::{ClientName, DynamicClientRegistrationUrl};
 use crate::{
-    AccessToken, AsyncHttpClient, Client, ClientId, ClientSecret, EndpointNotSet, ErrorResponse,
-    ErrorResponseType, RedirectUrl, RequestTokenError, ResponseType, RevocableToken, Scope,
-    StandardErrorResponse, SyncHttpClient, TokenIntrospectionResponse, TokenResponse,
+    AccessToken, AsyncHttpClient, AuthType, Client, ClientId, ClientSecret, EndpointNotSet,
+    ErrorResponse, ErrorResponseType, RedirectUrl, RequestTokenError, ResponseType, RevocableToken,
+    Scope, StandardErrorResponse, SyncHttpClient, TokenIntrospectionResponse, TokenResponse,
     CONTENT_TYPE_JSON,
 };
 
 use http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
-use http::HeaderValue;
+use http::{HeaderValue, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -21,52 +21,41 @@ use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
 use std::marker::PhantomData;
 
-impl<TE, TR, TIR, RT, TRE>
-    Client<
-        TE,
-        TR,
-        TIR,
-        RT,
-        TRE,
-        EndpointNotSet,
-        EndpointNotSet,
-        EndpointNotSet,
-        EndpointNotSet,
-        EndpointNotSet,
-    >
+/// Creates a request to dynamically register an OAuth 2.0 client.
+///
+/// See [RFC 7591](https://tools.ietf.org/html/rfc7591).
+///
+/// # Examples
+///
+/// See the `dynamic_client_registration` example.
+pub(crate) fn dynamic_client_registration_impl<'a, TE>(
+    client_name: ClientName,
+    dynamic_client_registration_url: &'a DynamicClientRegistrationUrl,
+) -> DynamicClientRegistrationRequest<'a, TE>
 where
     TE: ErrorResponse + 'static,
-    TR: TokenResponse,
-    TIR: TokenIntrospectionResponse,
-    RT: RevocableToken,
-    TRE: ErrorResponse + 'static,
 {
-    pub(crate) fn dynamic_client_registration_impl<'a>(
-        client_name: Cow<'a, ClientName>,
-        dynamic_client_registration_url: &'a DynamicClientRegistrationUrl,
-    ) -> DynamicClientRegistrationRequest<'a, TE> {
-        DynamicClientRegistrationRequest {
-            redirect_uris: Vec::new(),
-            token_endpoint_auth_method: None,
-            grant_types: Vec::new(),
-            response_types: Vec::new(),
-            client_name: Some(client_name),
-            client_uri: None,
-            logo_uri: None,
-            scope: None,
-            contacts: Vec::new(),
-            tos_uri: None,
-            policy_uri: None,
-            jwks_uri: None,
-            jwks: None,
-            software_id: None,
-            software_version: None,
-            software_statement: None,
-            initial_access_token: None,
-            extra_params: Vec::new(),
-            dynamic_client_registration_url,
-            _phantom: PhantomData,
-        }
+    DynamicClientRegistrationRequest {
+        redirect_uris: Vec::new(),
+        token_endpoint_auth_method: None,
+        grant_types: Vec::new(),
+        response_types: Vec::new(),
+        client_name: Some(Cow::Owned(client_name)),
+        client_uri: None,
+        logo_uri: None,
+        scope: None,
+        contacts: Vec::new(),
+        tos_uri: None,
+        policy_uri: None,
+        jwks_uri: None,
+        jwks: None,
+        software_id: None,
+        software_version: None,
+        software_statement: None,
+        initial_access_token: None,
+        extra_params: Vec::new(),
+        dynamic_client_registration_url,
+        _phantom: PhantomData,
     }
 }
 
@@ -331,11 +320,7 @@ where
                 .as_deref()
                 .map(Cow::Borrowed),
             grant_types: self.grant_types.iter().map(|t| t.as_ref()).collect(),
-            response_types: self
-                .response_types
-                .iter()
-                .map(|t| t.as_str())
-                .collect(),
+            response_types: self.response_types.iter().map(|t| t.as_str()).collect(),
             client_name: self.client_name.as_deref().map(|n| n.as_ref()),
             client_uri: self.client_uri.as_deref().map(Cow::Borrowed),
             logo_uri: self.logo_uri.as_deref().map(Cow::Borrowed),
@@ -356,17 +341,10 @@ where
         })?;
 
         let mut builder = http::Request::builder()
-            .uri(
-                self.dynamic_client_registration_url
-                    .url()
-                    .to_string(),
-            )
+            .uri(self.dynamic_client_registration_url.url().to_string())
             .method(http::Method::POST)
             .header(ACCEPT, HeaderValue::from_static(CONTENT_TYPE_JSON))
-            .header(
-                CONTENT_TYPE,
-                HeaderValue::from_static(CONTENT_TYPE_JSON),
-            );
+            .header(CONTENT_TYPE, HeaderValue::from_static(CONTENT_TYPE_JSON));
 
         if let Some(token) = self.initial_access_token.as_ref() {
             builder = builder.header(
@@ -396,7 +374,10 @@ where
         C: SyncHttpClient,
         EF: ExtraDynamicClientRegistrationFields,
     {
-        endpoint_response(http_client.call(self.prepare_request()?)?)
+        endpoint_response_with_status(
+            http_client.call(self.prepare_request()?)?,
+            &[StatusCode::OK, StatusCode::CREATED],
+        )
     }
 
     /// Asynchronously sends the request to the client registration endpoint and returns a Future.
@@ -414,7 +395,12 @@ where
         C: AsyncHttpClient<'c>,
         EF: ExtraDynamicClientRegistrationFields,
     {
-        Box::pin(async move { endpoint_response(http_client.call(self.prepare_request()?).await?) })
+        Box::pin(async move {
+            endpoint_response_with_status(
+                http_client.call(self.prepare_request()?).await?,
+                &[StatusCode::OK, StatusCode::CREATED],
+            )
+        })
     }
 }
 
@@ -633,6 +619,46 @@ where
     /// Any extra fields returned on the response.
     pub fn extra_fields(&self) -> &EF {
         &self.extra_fields
+    }
+}
+
+impl<EF> DynamicClientRegistrationResponse<EF>
+where
+    EF: ExtraDynamicClientRegistrationFields,
+{
+    pub fn into_client<TE, TR, TIR, RT, TRE>(
+        self,
+    ) -> Client<
+        TE,
+        TR,
+        TIR,
+        RT,
+        TRE,
+        EndpointNotSet,
+        EndpointNotSet,
+        EndpointNotSet,
+        EndpointNotSet,
+        EndpointNotSet,
+    >
+    where
+        TE: ErrorResponse + 'static,
+        TR: TokenResponse,
+        TIR: TokenIntrospectionResponse,
+        RT: RevocableToken,
+        TRE: ErrorResponse + 'static,
+    {
+        Client {
+            client_id: self.client_id,
+            client_secret: self.client_secret,
+            auth_url: None,
+            auth_type: AuthType::BasicAuth,
+            token_url: None,
+            redirect_url: None,
+            introspection_url: None,
+            revocation_url: None,
+            device_authorization_url: None,
+            phantom: PhantomData,
+        }
     }
 }
 
