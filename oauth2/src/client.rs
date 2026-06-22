@@ -1,4 +1,5 @@
 use crate::{
+    types::{ClientName, DynamicClientRegistrationUrl},
     AccessToken, AuthType, AuthUrl, AuthorizationCode, AuthorizationRequest,
     ClientCredentialsTokenRequest, ClientId, ClientSecret, CodeTokenRequest, ConfigurationError,
     CsrfToken, DeviceAccessTokenRequest, DeviceAuthorizationRequest, DeviceAuthorizationResponse,
@@ -200,6 +201,13 @@ where
             device_authorization_url: None,
             phantom: PhantomData,
         }
+    }
+
+    pub async fn dynamic_register(
+        client_name: ClientName,
+        dynamic_client_registration_url: DynamicClientRegistrationUrl,
+    ) -> () {
+        todo!()
     }
 }
 impl<

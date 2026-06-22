@@ -477,6 +477,8 @@ mod client;
 
 mod code;
 
+mod dcr;
+
 /// HTTP client backed by the [curl](https://crates.io/crates/curl) crate.
 /// Requires "curl" feature.
 #[cfg(all(feature = "curl", not(target_arch = "wasm32")))]

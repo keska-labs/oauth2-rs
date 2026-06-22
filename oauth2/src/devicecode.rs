@@ -158,7 +158,7 @@ where
     {
         endpoint_request(
             self.auth_type,
-            self.client_id,
+            Some(self.client_id),
             self.client_secret,
             &self.extra_params,
             None,
@@ -373,7 +373,7 @@ where
     {
         endpoint_request(
             self.auth_type,
-            self.client_id,
+            Some(self.client_id),
             self.client_secret,
             &self.extra_params,
             None,
