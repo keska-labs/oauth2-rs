@@ -633,35 +633,7 @@ where
         self,
         http_client: &C,
     ) -> Result<
-        Client<
-            TE,
-            TR,
-            TIR,
-            RT,
-            TRE,
-            EndpointNotSet,
-            EndpointNotSet,
-            EndpointNotSet,
-            EndpointNotSet,
-            EndpointNotSet,
-        >,
-        RequestTokenError<<C as SyncHttpClient>::Error, TE>,
-    >
-    where
-        C: SyncHttpClient,
-    {
-        self.inner
-            .request::<C, EF>(http_client)
-            .map(DynamicClientRegistrationResponse::into_client)
-    }
-
-    /// Asynchronously sends the registration request and returns a Future that resolves to an
-    /// OAuth 2.0 client configured with the registered `client_id` and `client_secret`.
-    pub fn register_async<'c, C>(
-        self,
-        http_client: &'c C,
-    ) -> impl Future<
-        Output = Result<
+        (
             Client<
                 TE,
                 TR,
@@ -674,6 +646,40 @@ where
                 EndpointNotSet,
                 EndpointNotSet,
             >,
+            DynamicClientRegistrationResponse<EF>,
+        ),
+        RequestTokenError<<C as SyncHttpClient>::Error, TE>,
+    >
+    where
+        C: SyncHttpClient,
+    {
+        self.inner
+            .request::<C, EF>(http_client)
+            .map(|response| (response.to_client(), response))
+    }
+
+    /// Asynchronously sends the registration request and returns a Future that resolves to an
+    /// OAuth 2.0 client configured with the registered `client_id` and `client_secret`.
+    pub fn register_async<'c, C>(
+        self,
+        http_client: &'c C,
+    ) -> impl Future<
+        Output = Result<
+            (
+                Client<
+                    TE,
+                    TR,
+                    TIR,
+                    RT,
+                    TRE,
+                    EndpointNotSet,
+                    EndpointNotSet,
+                    EndpointNotSet,
+                    EndpointNotSet,
+                    EndpointNotSet,
+                >,
+                DynamicClientRegistrationResponse<EF>,
+            ),
             RequestTokenError<<C as AsyncHttpClient<'c>>::Error, TE>,
         >,
     > + 'c
@@ -685,7 +691,7 @@ where
             self.inner
                 .request_async::<C, EF>(http_client)
                 .await
-                .map(DynamicClientRegistrationResponse::into_client)
+                .map(|response| (response.to_client(), response))
         }
     }
 }
@@ -917,8 +923,8 @@ where
     ///
     /// Authorization, token, and other endpoint URLs are not set and must be configured
     /// separately before the client can be used for authorization flows.
-    pub fn into_client<TE, TR, TIR, RT, TRE>(
-        self,
+    pub fn to_client<TE, TR, TIR, RT, TRE>(
+        &self,
     ) -> Client<
         TE,
         TR,
@@ -939,8 +945,8 @@ where
         TRE: ErrorResponse + 'static,
     {
         Client {
-            client_id: self.client_id,
-            client_secret: self.client_secret,
+            client_id: self.client_id.clone(),
+            client_secret: self.client_secret.clone(),
             auth_url: None,
             auth_type: AuthType::BasicAuth,
             token_url: None,
