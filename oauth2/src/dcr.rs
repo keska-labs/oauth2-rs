@@ -404,6 +404,292 @@ where
     }
 }
 
+/// Proxy for [`DynamicClientRegistrationRequest`] that carries the target [`Client`] type
+/// parameters and converts a successful registration response into a [`Client`].
+#[derive(Debug)]
+pub struct DynamicClient<'a, TE, TR, TIR, RT, TRE, EF = EmptyExtraDynamicClientRegistrationFields>
+where
+    TE: ErrorResponse,
+    EF: ExtraDynamicClientRegistrationFields,
+{
+    inner: DynamicClientRegistrationRequest<'a, TE>,
+    _phantom: PhantomData<(TR, TIR, RT, TRE, EF)>,
+}
+
+impl<'a, TE, TR, TIR, RT, TRE, EF> DynamicClient<'a, TE, TR, TIR, RT, TRE, EF>
+where
+    TE: ErrorResponse + 'static,
+    TR: TokenResponse,
+    TIR: TokenIntrospectionResponse,
+    RT: RevocableToken,
+    TRE: ErrorResponse + 'static,
+    EF: ExtraDynamicClientRegistrationFields,
+{
+    pub(crate) fn new(
+        client_name: ClientName,
+        dynamic_client_registration_url: &'a DynamicClientRegistrationUrl,
+    ) -> Self {
+        Self {
+            inner: dynamic_client_registration_impl(client_name, dynamic_client_registration_url),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Sets the redirection URIs for redirect-based flows.
+    pub fn set_redirect_uris<I>(mut self, redirect_uris: I) -> Self
+    where
+        I: IntoIterator<Item = Cow<'a, RedirectUrl>>,
+    {
+        self.inner = self.inner.set_redirect_uris(redirect_uris);
+        self
+    }
+
+    /// Appends a redirection URI.
+    pub fn add_redirect_uri(mut self, redirect_uri: RedirectUrl) -> Self {
+        self.inner = self.inner.add_redirect_uri(redirect_uri);
+        self
+    }
+
+    /// Sets the requested token endpoint authentication method.
+    pub fn set_token_endpoint_auth_method<N>(mut self, method: N) -> Self
+    where
+        N: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_token_endpoint_auth_method(method);
+        self
+    }
+
+    /// Sets the OAuth 2.0 grant types the client may use.
+    pub fn set_grant_types<I, S>(mut self, grant_types: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_grant_types(grant_types);
+        self
+    }
+
+    /// Appends an OAuth 2.0 grant type.
+    pub fn add_grant_type<S>(mut self, grant_type: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.add_grant_type(grant_type);
+        self
+    }
+
+    /// Sets the OAuth 2.0 response types the client may use.
+    pub fn set_response_types<I>(mut self, response_types: I) -> Self
+    where
+        I: IntoIterator<Item = Cow<'a, ResponseType>>,
+    {
+        self.inner = self.inner.set_response_types(response_types);
+        self
+    }
+
+    /// Appends an OAuth 2.0 response type.
+    pub fn add_response_type(mut self, response_type: ResponseType) -> Self {
+        self.inner = self.inner.add_response_type(response_type);
+        self
+    }
+
+    /// Sets the human-readable client name.
+    pub fn set_client_name(mut self, client_name: ClientName) -> Self {
+        self.inner = self.inner.set_client_name(client_name);
+        self
+    }
+
+    /// Sets the URL of a web page providing information about the client.
+    pub fn set_client_uri<U>(mut self, client_uri: U) -> Self
+    where
+        U: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_client_uri(client_uri);
+        self
+    }
+
+    /// Sets the URL of the client's logo.
+    pub fn set_logo_uri<U>(mut self, logo_uri: U) -> Self
+    where
+        U: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_logo_uri(logo_uri);
+        self
+    }
+
+    /// Sets the space-separated scope values the client may request.
+    pub fn set_scope(mut self, scope: Scope) -> Self {
+        self.inner = self.inner.set_scope(scope);
+        self
+    }
+
+    /// Sets the space-separated scope values the client may request.
+    pub fn set_scopes<I>(mut self, scopes: I) -> Self
+    where
+        I: IntoIterator<Item = Scope>,
+    {
+        self.inner = self.inner.set_scopes(scopes);
+        self
+    }
+
+    /// Sets contact addresses for people responsible for this client.
+    pub fn set_contacts<I, S>(mut self, contacts: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_contacts(contacts);
+        self
+    }
+
+    /// Appends a contact address.
+    pub fn add_contact<S>(mut self, contact: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.add_contact(contact);
+        self
+    }
+
+    /// Sets the URL of the client's terms of service document.
+    pub fn set_tos_uri<U>(mut self, tos_uri: U) -> Self
+    where
+        U: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_tos_uri(tos_uri);
+        self
+    }
+
+    /// Sets the URL of the client's privacy policy document.
+    pub fn set_policy_uri<U>(mut self, policy_uri: U) -> Self
+    where
+        U: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_policy_uri(policy_uri);
+        self
+    }
+
+    /// Sets the URL of the client's JSON Web Key Set document.
+    pub fn set_jwks_uri<U>(mut self, jwks_uri: U) -> Self
+    where
+        U: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_jwks_uri(jwks_uri);
+        self
+    }
+
+    /// Sets the client's JSON Web Key Set document value.
+    pub fn set_jwks(mut self, jwks: serde_json::Value) -> Self {
+        self.inner = self.inner.set_jwks(jwks);
+        self
+    }
+
+    /// Sets the software identifier for the client software.
+    pub fn set_software_id<S>(mut self, software_id: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_software_id(software_id);
+        self
+    }
+
+    /// Sets the software version identifier for the client software.
+    pub fn set_software_version<S>(mut self, software_version: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_software_version(software_version);
+        self
+    }
+
+    /// Sets the signed software statement JWT.
+    pub fn set_software_statement<S>(mut self, software_statement: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.set_software_statement(software_statement);
+        self
+    }
+
+    /// Sets the initial access token used to authorize protected registration requests.
+    pub fn set_initial_access_token(mut self, initial_access_token: AccessToken) -> Self {
+        self.inner = self.inner.set_initial_access_token(initial_access_token);
+        self
+    }
+
+    /// Appends an extra parameter to the registration request.
+    pub fn add_extra_param<N, V>(mut self, name: N, value: V) -> Self
+    where
+        N: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        self.inner = self.inner.add_extra_param(name, value);
+        self
+    }
+
+    /// Synchronously sends the registration request and returns an OAuth 2.0 client configured
+    /// with the registered `client_id` and `client_secret`.
+    pub fn register<C>(
+        self,
+        http_client: &C,
+    ) -> Result<
+        Client<
+            TE,
+            TR,
+            TIR,
+            RT,
+            TRE,
+            EndpointNotSet,
+            EndpointNotSet,
+            EndpointNotSet,
+            EndpointNotSet,
+            EndpointNotSet,
+        >,
+        RequestTokenError<<C as SyncHttpClient>::Error, TE>,
+    >
+    where
+        C: SyncHttpClient,
+    {
+        self.inner
+            .request::<C, EF>(http_client)
+            .map(DynamicClientRegistrationResponse::into_client)
+    }
+
+    /// Asynchronously sends the registration request and returns a Future that resolves to an
+    /// OAuth 2.0 client configured with the registered `client_id` and `client_secret`.
+    pub fn register_async<'c, C>(
+        self,
+        http_client: &'c C,
+    ) -> impl Future<
+        Output = Result<
+            Client<
+                TE,
+                TR,
+                TIR,
+                RT,
+                TRE,
+                EndpointNotSet,
+                EndpointNotSet,
+                EndpointNotSet,
+                EndpointNotSet,
+                EndpointNotSet,
+            >,
+            RequestTokenError<<C as AsyncHttpClient<'c>>::Error, TE>,
+        >,
+    > + 'c
+    where
+        Self: 'c,
+        C: AsyncHttpClient<'c>,
+    {
+        async move {
+            self.inner
+                .request_async::<C, EF>(http_client)
+                .await
+                .map(DynamicClientRegistrationResponse::into_client)
+        }
+    }
+}
+
 #[derive(Serialize)]
 struct DynamicClientRegistrationRequestBody<'a> {
     #[serde(skip_serializing_if = "Vec::is_empty")]

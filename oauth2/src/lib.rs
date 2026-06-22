@@ -527,9 +527,9 @@ pub use crate::code::AuthorizationRequest;
 pub use crate::curl_client::CurlHttpClient;
 pub use crate::dcr::{
     DynamicClientRegistrationErrorResponse, DynamicClientRegistrationErrorResponseType,
-    DynamicClientRegistrationRequest, DynamicClientRegistrationResponse,
-    EmptyExtraDynamicClientRegistrationFields, ExtraDynamicClientRegistrationFields,
-    StandardDynamicClientRegistrationResponse,
+    DynamicClient, DynamicClientRegistrationRequest,
+    DynamicClientRegistrationResponse, EmptyExtraDynamicClientRegistrationFields,
+    ExtraDynamicClientRegistrationFields, StandardDynamicClientRegistrationResponse,
 };
 pub use crate::devicecode::{
     DeviceAccessTokenRequest, DeviceAuthorizationRequest, DeviceAuthorizationResponse,

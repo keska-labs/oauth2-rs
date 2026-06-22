@@ -1,13 +1,12 @@
 use crate::{
-    dcr::dynamic_client_registration_impl, AccessToken, AuthType, AuthUrl, AuthorizationCode,
-    AuthorizationRequest, ClientCredentialsTokenRequest, ClientId, ClientName, ClientSecret,
-    CodeTokenRequest, ConfigurationError, CsrfToken, DeviceAccessTokenRequest,
-    DeviceAuthorizationRequest, DeviceAuthorizationResponse, DeviceAuthorizationUrl,
-    DynamicClientRegistrationRequest, DynamicClientRegistrationUrl, ErrorResponse,
-    ExtraDeviceAuthorizationFields, IntrospectionRequest, IntrospectionUrl, PasswordTokenRequest,
-    RedirectUrl, RefreshToken, RefreshTokenRequest, ResourceOwnerPassword, ResourceOwnerUsername,
-    RevocableToken, RevocationRequest, RevocationUrl, TokenIntrospectionResponse, TokenResponse,
-    TokenUrl,
+    AccessToken, AuthType, AuthUrl, AuthorizationCode, AuthorizationRequest,
+    ClientCredentialsTokenRequest, ClientId, ClientName, ClientSecret, CodeTokenRequest,
+    ConfigurationError, CsrfToken, DeviceAccessTokenRequest, DeviceAuthorizationRequest,
+    DeviceAuthorizationResponse, DeviceAuthorizationUrl, DynamicClient,
+    DynamicClientRegistrationUrl, ErrorResponse, ExtraDeviceAuthorizationFields,
+    IntrospectionRequest, IntrospectionUrl, PasswordTokenRequest, RedirectUrl, RefreshToken,
+    RefreshTokenRequest, ResourceOwnerPassword, ResourceOwnerUsername, RevocableToken,
+    RevocationRequest, RevocationUrl, TokenIntrospectionResponse, TokenResponse, TokenUrl,
 };
 
 use std::marker::PhantomData;
@@ -205,11 +204,11 @@ where
     }
 
     /// Create a request to dynamically register an OAuth 2.0 client.
-    pub fn dynamic_register<'a>(
+    pub fn dynamic_client<'a>(
         client_name: ClientName,
         dynamic_client_registration_url: &'a DynamicClientRegistrationUrl,
-    ) -> DynamicClientRegistrationRequest<'a, TE> {
-        dynamic_client_registration_impl(client_name, dynamic_client_registration_url)
+    ) -> DynamicClient<'a, TE, TR, TIR, RT, TRE> {
+        DynamicClient::new(client_name, dynamic_client_registration_url)
     }
 }
 impl<

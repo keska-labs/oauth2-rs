@@ -28,7 +28,6 @@ use oauth2::basic::BasicClient;
 use oauth2::reqwest;
 use oauth2::{
     AccessToken, ClientName, DynamicClientRegistrationUrl, RedirectUrl, ResponseType, Scope,
-    StandardDynamicClientRegistrationResponse,
 };
 
 use std::env;
@@ -50,7 +49,7 @@ fn main() {
         .build()
         .expect("Client should build");
 
-    let mut request = BasicClient::dynamic_register(client_name, &registration_url)
+    let mut request = BasicClient::dynamic_client(client_name, &registration_url)
         .add_grant_type("authorization_code")
         .add_response_type(ResponseType::new("code".to_string()))
         .set_token_endpoint_auth_method("client_secret_basic");
@@ -69,42 +68,9 @@ fn main() {
         request = request.set_initial_access_token(AccessToken::new(token));
     }
 
-    let registration_response: StandardDynamicClientRegistrationResponse = request
-        .request(&http_client)
+    let client = request
+        .register(&http_client)
         .expect("Failed to register client");
 
-    println!(
-        "Registered client_id: {:?}",
-        registration_response.client_id()
-    );
-
-    if let Some(client_secret) = registration_response.client_secret() {
-        println!("Registered client_secret: {}", client_secret.secret());
-    }
-
-    if let Some(redirect_uris) = registration_response.redirect_uris() {
-        println!("Registered redirect_uris: {redirect_uris:?}");
-    }
-
-    if let Some(grant_types) = registration_response.grant_types() {
-        println!("Registered grant_types: {grant_types:?}");
-    }
-
-    if let Some(response_types) = registration_response.response_types() {
-        println!("Registered response_types: {response_types:?}");
-    }
-
-    if let Some(scopes) = registration_response.scopes() {
-        println!("Registered scopes: {scopes:?}");
-    }
-
-    if let Some(expires_at) = registration_response.client_secret_expires_at() {
-        if registration_response.client_secret_never_expires() {
-            println!("Client secret does not expire");
-        } else {
-            println!("Client secret expires at (Unix time): {expires_at}");
-        }
-    }
-
-    let client = registration_response.into_client();
+    println!("Registered client_id: {:?}", client.client_id());
 }
