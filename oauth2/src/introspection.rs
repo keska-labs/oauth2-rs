@@ -2,7 +2,7 @@ use crate::endpoint::{endpoint_request, endpoint_response};
 use crate::{
     AccessToken, AsyncHttpClient, AuthType, Client, ClientId, ClientSecret, EndpointState,
     ErrorResponse, ExtraTokenFields, HttpRequest, IntrospectionUrl, RequestTokenError,
-    RevocableToken, Scope, SyncHttpClient, TokenResponse, TokenType,
+    RevocableToken, Scope, SyncHttpClient, TokenRequestBodyFormat, TokenResponse, TokenType,
 };
 
 use chrono::serde::ts_seconds_option;
@@ -58,6 +58,7 @@ where
         token: &'a AccessToken,
     ) -> IntrospectionRequest<'a, TE, TIR> {
         IntrospectionRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -81,6 +82,7 @@ where
 {
     pub(crate) token: &'a AccessToken,
     pub(crate) token_type_hint: Option<Cow<'a, str>>,
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -148,6 +150,7 @@ where
         }
 
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,

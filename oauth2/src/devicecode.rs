@@ -5,7 +5,7 @@ use crate::{
     AsyncHttpClient, AuthType, Client, ClientId, ClientSecret, DeviceAuthorizationUrl, DeviceCode,
     EndUserVerificationUrl, EndpointState, ErrorResponse, ErrorResponseType, HttpRequest,
     HttpResponse, RequestTokenError, RevocableToken, Scope, StandardErrorResponse, SyncHttpClient,
-    TokenIntrospectionResponse, TokenResponse, TokenUrl, UserCode,
+    TokenIntrospectionResponse, TokenRequestBodyFormat, TokenResponse, TokenUrl, UserCode,
 };
 
 use chrono::{DateTime, Utc};
@@ -62,6 +62,7 @@ where
         device_authorization_url: &'a DeviceAuthorizationUrl,
     ) -> DeviceAuthorizationRequest<'a, TE> {
         DeviceAuthorizationRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -81,6 +82,7 @@ where
         EF: ExtraDeviceAuthorizationFields,
     {
         DeviceAccessTokenRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -102,6 +104,7 @@ pub struct DeviceAuthorizationRequest<'a, TE>
 where
     TE: ErrorResponse,
 {
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -157,6 +160,7 @@ where
         RE: Error + 'static,
     {
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,
@@ -209,6 +213,7 @@ where
     TR: TokenResponse,
     EF: ExtraDeviceAuthorizationFields,
 {
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -255,6 +260,7 @@ where
         T: Fn() -> DateTime<Utc> + Send + Sync + 't,
     {
         DeviceAccessTokenRequest {
+            body_format: self.body_format,
             auth_type: self.auth_type,
             client_id: self.client_id,
             client_secret: self.client_secret,
@@ -372,6 +378,7 @@ where
         TE: ErrorResponse + 'static,
     {
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,

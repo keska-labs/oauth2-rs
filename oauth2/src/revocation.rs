@@ -3,7 +3,7 @@ use crate::endpoint::{endpoint_request, endpoint_response_status_only};
 use crate::{
     AccessToken, AsyncHttpClient, AuthType, Client, ClientId, ClientSecret, ConfigurationError,
     EndpointState, ErrorResponse, ErrorResponseType, HttpRequest, RefreshToken, RequestTokenError,
-    RevocationUrl, SyncHttpClient, TokenIntrospectionResponse, TokenResponse,
+    RevocationUrl, SyncHttpClient, TokenIntrospectionResponse, TokenRequestBodyFormat, TokenResponse,
 };
 
 use serde::{Deserialize, Serialize};
@@ -66,6 +66,7 @@ where
         }
 
         Ok(RevocationRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -217,6 +218,7 @@ where
     TE: ErrorResponse,
 {
     pub(crate) token: RT,
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -262,6 +264,7 @@ where
         }
 
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,

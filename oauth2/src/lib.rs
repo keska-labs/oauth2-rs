@@ -593,6 +593,20 @@ pub enum AuthType {
     BasicAuth,
 }
 
+/// Serialization format for OAuth2 token endpoint request bodies.
+///
+/// The default is [`TokenRequestBodyFormat::FormUrlEncoded`], as defined by
+/// [RFC 6749](https://tools.ietf.org/html/rfc6749#section-4.1.3).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum TokenRequestBodyFormat {
+    /// `application/x-www-form-urlencoded` request body.
+    #[default]
+    FormUrlEncoded,
+    /// `application/json` request body with string-valued fields.
+    Json,
+}
+
 /// Error type returned by built-in HTTP clients when requests fail.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]

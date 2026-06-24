@@ -3,7 +3,7 @@ use crate::{
     AccessToken, AsyncHttpClient, AuthType, AuthorizationCode, Client, ClientId, ClientSecret,
     EndpointState, ErrorResponse, HttpRequest, PkceCodeVerifier, RedirectUrl, RefreshToken,
     RequestTokenError, ResourceOwnerPassword, ResourceOwnerUsername, RevocableToken, Scope,
-    SyncHttpClient, TokenIntrospectionResponse, TokenUrl,
+    SyncHttpClient, TokenIntrospectionResponse, TokenRequestBodyFormat, TokenUrl,
 };
 
 use serde::de::DeserializeOwned;
@@ -60,6 +60,7 @@ where
         token_url: &'a TokenUrl,
     ) -> ClientCredentialsTokenRequest<'a, TE, TR> {
         ClientCredentialsTokenRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -76,6 +77,7 @@ where
         code: AuthorizationCode,
     ) -> CodeTokenRequest<'a, TE, TR> {
         CodeTokenRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -95,6 +97,7 @@ where
         password: &'a ResourceOwnerPassword,
     ) -> PasswordTokenRequest<'a, TE, TR> {
         PasswordTokenRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -113,6 +116,7 @@ where
         refresh_token: &'a RefreshToken,
     ) -> RefreshTokenRequest<'a, TE, TR> {
         RefreshTokenRequest {
+            body_format: &self.token_request_body_format,
             auth_type: &self.auth_type,
             client_id: &self.client_id,
             client_secret: self.client_secret.as_ref(),
@@ -134,6 +138,7 @@ where
     TE: ErrorResponse,
     TR: TokenResponse,
 {
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -200,6 +205,7 @@ where
         }
 
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,
@@ -245,6 +251,7 @@ where
     TE: ErrorResponse,
     TR: TokenResponse,
 {
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -323,6 +330,7 @@ where
         RE: Error + 'static,
     {
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,
@@ -348,6 +356,7 @@ where
     TE: ErrorResponse,
     TR: TokenResponse,
 {
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -428,6 +437,7 @@ where
         RE: Error + 'static,
     {
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,
@@ -454,6 +464,7 @@ where
     TE: ErrorResponse,
     TR: TokenResponse,
 {
+    pub(crate) body_format: &'a TokenRequestBodyFormat,
     pub(crate) auth_type: &'a AuthType,
     pub(crate) client_id: &'a ClientId,
     pub(crate) client_secret: Option<&'a ClientSecret>,
@@ -532,6 +543,7 @@ where
         RE: Error + 'static,
     {
         endpoint_request(
+            self.body_format,
             self.auth_type,
             self.client_id,
             self.client_secret,
