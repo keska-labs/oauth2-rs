@@ -56,6 +56,41 @@ pub(crate) fn mock_http_client(
     }
 }
 
+pub(crate) fn mock_http_client_json(
+    request_headers: Vec<(HeaderName, &'static str)>,
+    request_body_fields: &'static [(&'static str, &'static str)],
+    request_url: Option<Url>,
+    response: HttpResponse,
+) -> impl Fn(HttpRequest) -> Result<HttpResponse, FakeError> {
+    move |request: HttpRequest| {
+        assert_eq!(
+            &Url::parse(&request.uri().to_string()).unwrap(),
+            request_url
+                .as_ref()
+                .unwrap_or(&Url::parse("https://example.com/token").unwrap())
+        );
+        assert_eq!(
+            request.headers(),
+            &request_headers
+                .iter()
+                .map(|(name, value)| (name.clone(), HeaderValue::from_str(value).unwrap()))
+                .collect(),
+        );
+
+        let body = serde_json::from_slice::<serde_json::Value>(request.body())
+            .expect("request body must be JSON");
+        let obj = body
+            .as_object()
+            .expect("request body must be a JSON object");
+        assert_eq!(obj.len(), request_body_fields.len());
+        for (key, value) in request_body_fields {
+            assert_eq!(obj.get(*key).and_then(|v| v.as_str()), Some(*value));
+        }
+
+        Ok(response.clone())
+    }
+}
+
 #[derive(Debug, Error)]
 pub(crate) enum FakeError {
     #[error("error")]

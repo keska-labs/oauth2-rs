@@ -4,7 +4,8 @@ use crate::types::{ClientName, DynamicClientRegistrationUrl};
 use crate::{
     AccessToken, AsyncHttpClient, AuthType, Client, ClientId, ClientSecret, EndpointNotSet,
     ErrorResponse, ErrorResponseType, RedirectUrl, RequestTokenError, ResponseType, RevocableToken,
-    Scope, StandardErrorResponse, SyncHttpClient, TokenIntrospectionResponse, TokenResponse,
+    Scope, StandardErrorResponse, SyncHttpClient, TokenIntrospectionResponse, TokenRequestBodyFormat,
+    TokenResponse,
     CONTENT_TYPE_JSON,
 };
 
@@ -949,6 +950,7 @@ where
             client_secret: self.client_secret.clone(),
             auth_url: None,
             auth_type: AuthType::BasicAuth,
+            token_request_body_format: TokenRequestBodyFormat::FormUrlEncoded,
             token_url: None,
             redirect_url: None,
             introspection_url: None,

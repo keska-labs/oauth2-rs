@@ -6,7 +6,8 @@ use crate::{
     DynamicClientRegistrationUrl, ErrorResponse, ExtraDeviceAuthorizationFields,
     IntrospectionRequest, IntrospectionUrl, PasswordTokenRequest, RedirectUrl, RefreshToken,
     RefreshTokenRequest, ResourceOwnerPassword, ResourceOwnerUsername, RevocableToken,
-    RevocationRequest, RevocationUrl, TokenIntrospectionResponse, TokenResponse, TokenUrl,
+    RevocationRequest, RevocationUrl, TokenIntrospectionResponse, TokenRequestBodyFormat,
+    TokenResponse, TokenUrl,
 };
 
 use std::marker::PhantomData;
@@ -148,6 +149,7 @@ pub struct Client<
     pub(crate) client_secret: Option<ClientSecret>,
     pub(crate) auth_url: Option<AuthUrl>,
     pub(crate) auth_type: AuthType,
+    pub(crate) token_request_body_format: TokenRequestBodyFormat,
     pub(crate) token_url: Option<TokenUrl>,
     pub(crate) redirect_url: Option<RedirectUrl>,
     pub(crate) introspection_url: Option<IntrospectionUrl>,
@@ -194,6 +196,7 @@ where
             client_secret: None,
             auth_url: None,
             auth_type: AuthType::BasicAuth,
+            token_request_body_format: TokenRequestBodyFormat::FormUrlEncoded,
             token_url: None,
             redirect_url: None,
             introspection_url: None,
@@ -261,6 +264,18 @@ where
         self
     }
 
+    /// Set the serialization format for token endpoint request bodies.
+    ///
+    /// The default is [`TokenRequestBodyFormat::FormUrlEncoded`].
+    pub fn set_token_request_body_format(
+        mut self,
+        token_request_body_format: TokenRequestBodyFormat,
+    ) -> Self {
+        self.token_request_body_format = token_request_body_format;
+
+        self
+    }
+
     /// Set the authorization endpoint.
     ///
     /// The client uses the authorization endpoint to obtain authorization from the resource owner
@@ -287,6 +302,7 @@ where
             client_secret: self.client_secret,
             auth_url: Some(auth_url),
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -322,6 +338,7 @@ where
             client_secret: self.client_secret,
             auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -366,6 +383,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -399,6 +417,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -431,6 +450,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: Some(introspection_url),
@@ -464,6 +484,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url,
@@ -503,6 +524,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -536,6 +558,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: self.token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -571,6 +594,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url: Some(token_url),
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -606,6 +630,7 @@ where
             client_secret: self.client_secret,
             auth_url: self.auth_url,
             auth_type: self.auth_type,
+            token_request_body_format: self.token_request_body_format,
             token_url,
             redirect_url: self.redirect_url,
             introspection_url: self.introspection_url,
@@ -624,6 +649,11 @@ where
     /// server.
     pub fn auth_type(&self) -> &AuthType {
         &self.auth_type
+    }
+
+    /// Return the serialization format for token endpoint request bodies.
+    pub fn token_request_body_format(&self) -> &TokenRequestBodyFormat {
+        &self.token_request_body_format
     }
 
     /// Return the redirect URL used by the authorization endpoint.

@@ -5,13 +5,13 @@ use crate::tests::colorful_extension::{
     ColorfulClient, ColorfulErrorResponseType, ColorfulFields, ColorfulTokenResponse,
     ColorfulTokenType,
 };
-use crate::tests::{mock_http_client, new_client, FakeError};
+use crate::tests::{mock_http_client, mock_http_client_json, new_client, FakeError};
 use crate::token::tests::custom_errors::CustomErrorClient;
 use crate::{
     AccessToken, AuthType, AuthUrl, AuthorizationCode, ClientId, ClientSecret, ExtraTokenFields,
     PkceCodeVerifier, RedirectUrl, RefreshToken, RequestTokenError, ResourceOwnerPassword,
-    ResourceOwnerUsername, Scope, StandardErrorResponse, StandardTokenResponse, TokenResponse,
-    TokenType, TokenUrl,
+    ResourceOwnerUsername, Scope, StandardErrorResponse, StandardTokenResponse, TokenRequestBodyFormat,
+    TokenResponse, TokenType, TokenUrl,
 };
 
 use http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
@@ -137,6 +137,105 @@ fn test_exchange_code_successful_with_complete_json_response() {
 
     let deserialized_token = serde_json::from_str::<BasicTokenResponse>(&serialized_json).unwrap();
     assert_token_eq(&token, &deserialized_token);
+}
+
+#[test]
+fn test_exchange_code_json_body_request_body_auth() {
+    let client = new_client()
+        .set_auth_type(AuthType::RequestBody)
+        .set_token_request_body_format(TokenRequestBodyFormat::Json);
+    let token = client
+        .exchange_code(AuthorizationCode::new("ccc".to_string()))
+        .request(&mock_http_client_json(
+            vec![
+                (ACCEPT, "application/json"),
+                (CONTENT_TYPE, "application/json"),
+            ],
+            &[
+                ("client_id", "aaa"),
+                ("client_secret", "bbb"),
+                ("code", "ccc"),
+                ("grant_type", "authorization_code"),
+            ],
+            None,
+            Response::builder()
+                .status(StatusCode::OK)
+                .body(
+                    "{\"access_token\": \"12/34\", \"token_type\": \"BEARER\"}"
+                        .to_string()
+                        .into_bytes(),
+                )
+                .unwrap(),
+        ))
+        .unwrap();
+
+    assert_eq!("12/34", token.access_token().secret());
+}
+
+#[test]
+fn test_exchange_code_json_body_basic_auth() {
+    let client = new_client().set_token_request_body_format(TokenRequestBodyFormat::Json);
+    let token = client
+        .exchange_code(AuthorizationCode::new("ccc".to_string()))
+        .request(&mock_http_client_json(
+            vec![
+                (ACCEPT, "application/json"),
+                (CONTENT_TYPE, "application/json"),
+                (AUTHORIZATION, "Basic YWFhOmJiYg=="),
+            ],
+            &[("code", "ccc"), ("grant_type", "authorization_code")],
+            None,
+            Response::builder()
+                .status(StatusCode::OK)
+                .body(
+                    "{\"access_token\": \"12/34\", \"token_type\": \"BEARER\"}"
+                        .to_string()
+                        .into_bytes(),
+                )
+                .unwrap(),
+        ))
+        .unwrap();
+
+    assert_eq!("12/34", token.access_token().secret());
+}
+
+#[test]
+fn test_exchange_refresh_token_json_body() {
+    let client = new_client().set_token_request_body_format(TokenRequestBodyFormat::Json);
+    let token = client
+        .exchange_refresh_token(&RefreshToken::new("ccc".to_string()))
+        .request(&mock_http_client_json(
+            vec![
+                (ACCEPT, "application/json"),
+                (CONTENT_TYPE, "application/json"),
+                (AUTHORIZATION, "Basic YWFhOmJiYg=="),
+            ],
+            &[("grant_type", "refresh_token"), ("refresh_token", "ccc")],
+            None,
+            Response::builder()
+                .status(StatusCode::OK)
+                .body(
+                    "{\
+                       \"access_token\": \"12/34\", \
+                       \"token_type\": \"bearer\", \
+                       \"scope\": \"read write\"\
+                       }"
+                    .to_string()
+                    .into_bytes(),
+                )
+                .unwrap(),
+        ))
+        .unwrap();
+
+    assert_eq!("12/34", token.access_token().secret());
+    assert_eq!(BasicTokenType::Bearer, *token.token_type());
+    assert_eq!(
+        Some(&vec![
+            Scope::new("read".to_string()),
+            Scope::new("write".to_string()),
+        ]),
+        token.scopes()
+    );
 }
 
 #[test]

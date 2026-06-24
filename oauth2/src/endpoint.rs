@@ -1,6 +1,6 @@
 use crate::{
     AuthType, ClientId, ClientSecret, ErrorResponse, RedirectUrl, RequestTokenError, Scope,
-    CONTENT_TYPE_FORMENCODED, CONTENT_TYPE_JSON,
+    TokenRequestBodyFormat, CONTENT_TYPE_FORMENCODED, CONTENT_TYPE_JSON,
 };
 
 use base64::prelude::*;
@@ -10,6 +10,7 @@ use serde::de::DeserializeOwned;
 use url::{form_urlencoded, Url};
 
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
 
@@ -70,6 +71,7 @@ where
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn endpoint_request<'a>(
+    body_format: &'a TokenRequestBodyFormat,
     auth_type: &'a AuthType,
     client_id: &'a ClientId,
     client_secret: Option<&'a ClientSecret>,
@@ -79,13 +81,18 @@ pub(crate) fn endpoint_request<'a>(
     url: &'a Url,
     params: Vec<(&'a str, &'a str)>,
 ) -> Result<HttpRequest, http::Error> {
+    let content_type = match body_format {
+        TokenRequestBodyFormat::FormUrlEncoded => CONTENT_TYPE_FORMENCODED,
+        TokenRequestBodyFormat::Json => CONTENT_TYPE_JSON,
+    };
+
     let mut builder = http::Request::builder()
         .uri(url.to_string())
         .method(http::Method::POST)
         .header(ACCEPT, HeaderValue::from_static(CONTENT_TYPE_JSON))
         .header(
             CONTENT_TYPE,
-            HeaderValue::from_static(CONTENT_TYPE_FORMENCODED),
+            HeaderValue::from_static(content_type),
         );
 
     let scopes_opt = scopes.and_then(|scopes| {
@@ -146,10 +153,16 @@ pub(crate) fn endpoint_request<'a>(
             .as_slice(),
     );
 
-    let body = form_urlencoded::Serializer::new(String::new())
-        .extend_pairs(params)
-        .finish()
-        .into_bytes();
+    let body = match body_format {
+        TokenRequestBodyFormat::FormUrlEncoded => form_urlencoded::Serializer::new(String::new())
+            .extend_pairs(params)
+            .finish()
+            .into_bytes(),
+        TokenRequestBodyFormat::Json => {
+            let map: HashMap<&str, &str> = params.into_iter().collect();
+            serde_json::to_vec(&map).expect("JSON token request body serialization cannot fail")
+        }
+    };
 
     builder.body(body)
 }
